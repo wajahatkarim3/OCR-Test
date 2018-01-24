@@ -1,5 +1,6 @@
 package com.wajahatkarim3.ocrtest;
 
+import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -10,14 +11,18 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.googlecode.tesseract.android.TessBaseAPI;
 import com.nguyenhoanglam.imagepicker.model.Config;
 import com.nguyenhoanglam.imagepicker.model.Image;
 import com.nguyenhoanglam.imagepicker.ui.imagepicker.ImagePicker;
+import com.theartofdev.edmodo.cropper.CropImage;
+import com.theartofdev.edmodo.cropper.CropImageView;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -26,6 +31,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+
+import static com.googlecode.tesseract.android.TessBaseAPI.OEM_TESSERACT_ONLY;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -60,7 +67,7 @@ public class MainActivity extends AppCompatActivity {
         String language = "eng";
 
         mTess = new TessBaseAPI();
-        mTess.init(datapath, language);
+        mTess.init(datapath, language, OEM_TESSERACT_ONLY);
     }
 
 
@@ -123,15 +130,24 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void pickImage(View view){
+
+        /*
         ImagePicker.with(this)
                 .setCameraOnly(true)
                 .setMaxSize(1)
                 .setMultipleMode(false)
                 .start();
+                */
+
+        // start picker to get image for cropping and then use the image in cropping activity
+        CropImage.activity()
+                .setGuidelines(CropImageView.Guidelines.ON)
+                .start(this);
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == Config.RC_PICK_IMAGES && resultCode == RESULT_OK && data != null) {
             ArrayList<Image> images = data.getParcelableArrayListExtra(Config.EXTRA_IMAGES);
             // do your logic here...
@@ -145,7 +161,20 @@ public class MainActivity extends AppCompatActivity {
                 imageView.setImageBitmap(image);
             }
         }
-        super.onActivityResult(requestCode, resultCode, data);  // THIS METHOD SHOULD BE HERE so that ImagePicker works with fragment
+        else if (requestCode == CropImage.CROP_IMAGE_ACTIVITY_REQUEST_CODE) {
+            CropImage.ActivityResult result = CropImage.getActivityResult(data);
+            if (resultCode == RESULT_OK) {
+                Uri resultUri = result.getUri();
+
+                BitmapFactory.Options bmOptions = new BitmapFactory.Options();
+                image = BitmapFactory.decodeFile(resultUri.getPath(),bmOptions);
+                imageView.setImageBitmap(image);
+
+            } else if (resultCode == CropImage.CROP_IMAGE_ACTIVITY_RESULT_ERROR_CODE) {
+                Exception error = result.getError();
+            }
+        }
+          // THIS METHOD SHOULD BE HERE so that ImagePicker works with fragment
     }
 
     class ImageProcessTask extends AsyncTask<Bitmap, Void, String>

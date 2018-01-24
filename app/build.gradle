@@ -27,7 +27,7 @@ dependencies {
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.1'
     compile 'com.rmtheis:tess-two:5.4.1'
     compile 'com.github.nguyenhoanglam:ImagePicker:1.2.1'
-    compile 'com.github.takusemba:cropme:1.0.3'
+    compile 'com.theartofdev.edmodo:android-image-cropper:2.6.+'
 }
 configurations.all {
     resolutionStrategy.eachDependency { DependencyResolveDetails details ->
