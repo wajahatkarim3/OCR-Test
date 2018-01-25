@@ -9,6 +9,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Environment;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -32,11 +33,19 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 
+import pyxis.uzuki.live.mediaresizer.MediaResizer;
+import pyxis.uzuki.live.mediaresizer.data.ImageResizeOption;
+import pyxis.uzuki.live.mediaresizer.data.ResizeOption;
+import pyxis.uzuki.live.mediaresizer.model.ImageMode;
+import pyxis.uzuki.live.mediaresizer.model.MediaType;
+import pyxis.uzuki.live.richutilskt.impl.F2;
+
 import static com.googlecode.tesseract.android.TessBaseAPI.OEM_TESSERACT_ONLY;
 
 public class MainActivity extends AppCompatActivity {
 
     Bitmap image;
+    String targetPath;
     TessBaseAPI mTess;
     String datapath = "";
 
@@ -67,7 +76,7 @@ public class MainActivity extends AppCompatActivity {
         String language = "eng";
 
         mTess = new TessBaseAPI();
-        mTess.init(datapath, language, OEM_TESSERACT_ONLY);
+        mTess.init(datapath, language);
     }
 
 
@@ -126,7 +135,51 @@ public class MainActivity extends AppCompatActivity {
                     theTask.cancel(true);
             }
         });
-        theTask = new ImageProcessTask().execute(image);
+
+
+        // Compress before processing it
+        ImageResizeOption resizeOption = new ImageResizeOption.Builder()
+                .setImageProcessMode(ImageMode.ResizeAndCompress)
+                .setCompressFormat(Bitmap.CompressFormat.JPEG)
+                .setCompressQuality(40)
+                .build();
+
+        File dir = new File(datapath + "/images/");
+        dir.mkdirs();
+        File file = new File(datapath + "/images/", "resize-"+System.currentTimeMillis()+".jpg");
+        if (file.exists() == false)
+        {
+            try {
+                file.createNewFile();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        ResizeOption option = new ResizeOption.Builder()
+                .setMediaType(MediaType.IMAGE)
+                .setImageResizeOption(resizeOption)
+                .setTargetPath(targetPath)
+                .setOutputPath(file.getAbsolutePath())
+                .setCallback(new F2<Integer, String>() {
+                    @Override
+                    public void invoke(Integer code, String output) {
+                        Log.e("RESIZE", code + " -- " + output);
+
+
+                        Bitmap compressImage = BitmapFactory.decodeFile(output);
+
+                        theTask = new ImageProcessTask().execute(compressImage);
+
+                    }
+                })
+                .build();
+
+        MediaResizer.process(option);
+
+
+
+        //
     }
 
     public void pickImage(View view){
@@ -168,6 +221,7 @@ public class MainActivity extends AppCompatActivity {
 
                 BitmapFactory.Options bmOptions = new BitmapFactory.Options();
                 image = BitmapFactory.decodeFile(resultUri.getPath(),bmOptions);
+                targetPath = resultUri.getPath();
                 imageView.setImageBitmap(image);
 
             } else if (resultCode == CropImage.CROP_IMAGE_ACTIVITY_RESULT_ERROR_CODE) {

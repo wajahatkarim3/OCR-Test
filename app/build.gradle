@@ -4,7 +4,7 @@ android {
     compileSdkVersion 26
     defaultConfig {
         applicationId "com.wajahatkarim3.ocrtest"
-        minSdkVersion 17
+        minSdkVersion 18
         targetSdkVersion 26
         versionCode 1
         versionName "1.0"
@@ -28,6 +28,7 @@ dependencies {
     compile 'com.rmtheis:tess-two:5.4.1'
     compile 'com.github.nguyenhoanglam:ImagePicker:1.2.1'
     compile 'com.theartofdev.edmodo:android-image-cropper:2.6.+'
+    implementation 'com.github.WindSekirun:MediaResizer:1.0.0'
 }
 configurations.all {
     resolutionStrategy.eachDependency { DependencyResolveDetails details ->
