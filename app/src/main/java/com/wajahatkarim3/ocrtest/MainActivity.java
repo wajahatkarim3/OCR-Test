@@ -40,6 +40,8 @@ import pyxis.uzuki.live.mediaresizer.model.ImageMode;
 import pyxis.uzuki.live.mediaresizer.model.MediaType;
 import pyxis.uzuki.live.richutilskt.impl.F2;
 
+import static com.googlecode.tesseract.android.TessBaseAPI.OEM_DEFAULT;
+import static com.googlecode.tesseract.android.TessBaseAPI.OEM_TESSERACT_CUBE_COMBINED;
 import static com.googlecode.tesseract.android.TessBaseAPI.OEM_TESSERACT_ONLY;
 
 public class MainActivity extends AppCompatActivity {
@@ -76,7 +78,7 @@ public class MainActivity extends AppCompatActivity {
         String language = "eng";
 
         mTess = new TessBaseAPI();
-        mTess.init(datapath, language);
+        mTess.init(datapath, language, OEM_DEFAULT);
     }
 
 
@@ -167,7 +169,9 @@ public class MainActivity extends AppCompatActivity {
                         Log.e("RESIZE", code + " -- " + output);
 
 
-                        Bitmap compressImage = BitmapFactory.decodeFile(output);
+                        BitmapFactory.Options options = new BitmapFactory.Options();
+                        options.inSampleSize = 2;
+                        Bitmap compressImage = BitmapFactory.decodeFile(output, options);
 
                         theTask = new ImageProcessTask().execute(compressImage);
 
