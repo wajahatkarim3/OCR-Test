@@ -90,9 +90,10 @@ public class MainActivity extends AppCompatActivity {
 
         //init Tesseract API
         String language = "eng";
+        //language = "hin+eng";
 
         mTess = new TessBaseAPI();
-        mTess.init(datapath, language, OEM_DEFAULT);
+        mTess.init(datapath, language, OEM_TESSERACT_ONLY);
     }
 
 
@@ -184,15 +185,18 @@ public class MainActivity extends AppCompatActivity {
 
 
                         BitmapFactory.Options options = new BitmapFactory.Options();
-                        options.inSampleSize = 3;
+                        //options.inSampleSize = 3;
                         Bitmap compressImage = BitmapFactory.decodeFile(output, options);
 
                         // Convert the image to black white before OCR
-                        Bitmap black = convertToBlackWhite(compressImage);
+                        //Bitmap black = convertToBlackWhite(compressImage);
 
-                        imageView.setImageBitmap(black);
+                        //imageView.setImageBitmap(black);
 
-                        theTask = new ImageProcessTask().execute(black);
+
+
+                        theTask = new ImageProcessTask().execute(convertToBlackWhite(compressImage));
+                        //theTask = new ImageProcessTask().execute(compressImage);
 
                     }
                 })
@@ -207,26 +211,22 @@ public class MainActivity extends AppCompatActivity {
 
     public Bitmap convertToBlackWhite(Bitmap compressImage)
     {
+        Log.d("CV", "Before converting to black");
         Mat imageMat = new Mat();
         Utils.bitmapToMat(compressImage, imageMat);
         Imgproc.cvtColor(imageMat, imageMat, Imgproc.COLOR_BGR2GRAY);
         Imgproc.GaussianBlur(imageMat, imageMat, new Size(3, 3), 0);
         //Imgproc.adaptiveThreshold(imageMat, imageMat, 255, Imgproc.ADAPTIVE_THRESH_MEAN_C, Imgproc.THRESH_BINARY_INV, 5, 4);
-        Imgproc.medianBlur(imageMat, imageMat, 3);
+        //Imgproc.medianBlur(imageMat, imageMat, 3);
         Imgproc.threshold(imageMat, imageMat, 0, 255, Imgproc.THRESH_OTSU);
-
 
         Bitmap newBitmap = compressImage;
         Utils.matToBitmap(imageMat, newBitmap);
         imageView.setImageBitmap(newBitmap);
+        Log.d("CV", "After converting to black");
+
 
         return newBitmap;
-
-
-        /*
-
-
-        */
 
     }
 
@@ -283,8 +283,11 @@ public class MainActivity extends AppCompatActivity {
     class ImageProcessTask extends AsyncTask<Bitmap, Void, String>
     {
 
+
         @Override
         protected String doInBackground(Bitmap... bitmaps) {
+
+            Log.d("CV", "Starting ocr");
 
             mTess.setImage(bitmaps[0]);
             return mTess.getUTF8Text();
@@ -293,6 +296,8 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(final String text) {
             super.onPostExecute(text);
+
+            Log.d("CV", "OCR Done: " + text);
 
             runOnUiThread(new Runnable() {
                 @Override
