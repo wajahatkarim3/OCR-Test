@@ -25,6 +25,14 @@ import com.nguyenhoanglam.imagepicker.ui.imagepicker.ImagePicker;
 import com.theartofdev.edmodo.cropper.CropImage;
 import com.theartofdev.edmodo.cropper.CropImageView;
 
+import org.opencv.android.BaseLoaderCallback;
+import org.opencv.android.LoaderCallbackInterface;
+import org.opencv.android.OpenCVLoader;
+import org.opencv.android.Utils;
+import org.opencv.core.Mat;
+import org.opencv.core.Size;
+import org.opencv.imgproc.Imgproc;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -45,6 +53,12 @@ import static com.googlecode.tesseract.android.TessBaseAPI.OEM_TESSERACT_CUBE_CO
 import static com.googlecode.tesseract.android.TessBaseAPI.OEM_TESSERACT_ONLY;
 
 public class MainActivity extends AppCompatActivity {
+
+    static {
+        if (!OpenCVLoader.initDebug()) {
+            // Handle initialization error
+        }
+    }
 
     Bitmap image;
     String targetPath;
@@ -170,10 +184,15 @@ public class MainActivity extends AppCompatActivity {
 
 
                         BitmapFactory.Options options = new BitmapFactory.Options();
-                        options.inSampleSize = 2;
+                        options.inSampleSize = 3;
                         Bitmap compressImage = BitmapFactory.decodeFile(output, options);
 
-                        theTask = new ImageProcessTask().execute(compressImage);
+                        // Convert the image to black white before OCR
+                        Bitmap black = convertToBlackWhite(compressImage);
+
+                        imageView.setImageBitmap(black);
+
+                        theTask = new ImageProcessTask().execute(black);
 
                     }
                 })
@@ -185,6 +204,32 @@ public class MainActivity extends AppCompatActivity {
 
         //
     }
+
+    public Bitmap convertToBlackWhite(Bitmap compressImage)
+    {
+        Mat imageMat = new Mat();
+        Utils.bitmapToMat(compressImage, imageMat);
+        Imgproc.cvtColor(imageMat, imageMat, Imgproc.COLOR_BGR2GRAY);
+        Imgproc.GaussianBlur(imageMat, imageMat, new Size(3, 3), 0);
+        //Imgproc.adaptiveThreshold(imageMat, imageMat, 255, Imgproc.ADAPTIVE_THRESH_MEAN_C, Imgproc.THRESH_BINARY_INV, 5, 4);
+        Imgproc.medianBlur(imageMat, imageMat, 3);
+        Imgproc.threshold(imageMat, imageMat, 0, 255, Imgproc.THRESH_OTSU);
+
+
+        Bitmap newBitmap = compressImage;
+        Utils.matToBitmap(imageMat, newBitmap);
+        imageView.setImageBitmap(newBitmap);
+
+        return newBitmap;
+
+
+        /*
+
+
+        */
+
+    }
+
 
     public void pickImage(View view){
 
@@ -258,4 +303,20 @@ public class MainActivity extends AppCompatActivity {
             });
         }
     }
+
+    private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
+        @Override
+        public void onManagerConnected(int status) {
+            switch (status) {
+                case LoaderCallbackInterface.SUCCESS:
+                {
+                    Log.i("OpenCV", "OpenCV loaded successfully");
+                } break;
+                default:
+                {
+                    super.onManagerConnected(status);
+                } break;
+            }
+        }
+    };
 }
